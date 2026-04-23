@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Twitter Comment Filter",
+  "version": "0.1.0",
+  "description": "在 X/Twitter 推文详情页按自定义文本和模糊匹配规则屏蔽评论。",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*"
+  ],
+  "action": {
+    "default_title": "评论屏蔽器",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

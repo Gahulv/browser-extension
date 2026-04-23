@@ -1,0 +1,160 @@
+:root {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #1f2937;
+  background: #f5f2ea;
+}
+
+body {
+  margin: 0;
+  min-width: 340px;
+  background:
+    radial-gradient(circle at 12% 14%, rgba(255, 145, 0, 0.2), transparent 35%),
+    linear-gradient(180deg, #faf7f0, #f1ece2);
+}
+
+.panel {
+  padding: 14px;
+}
+
+.card {
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(146, 116, 82, 0.2);
+  background: rgba(255, 251, 245, 0.95);
+  box-shadow: 0 8px 20px rgba(54, 35, 12, 0.08);
+}
+
+.header,
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+
+p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid #dccbb3;
+  border-radius: 10px;
+  background: #fffdfa;
+  color: inherit;
+  font: inherit;
+}
+
+.search-input {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid #dccbb3;
+  border-radius: 10px;
+  background: #fffdfa;
+  color: inherit;
+  font: inherit;
+}
+
+button {
+  margin-top: 10px;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #c54b1b;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #a83e15;
+}
+
+button.ghost {
+  margin-top: 0;
+  padding: 0;
+  background: transparent;
+  color: #9f4419;
+}
+
+.list-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hint,
+.status {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.status {
+  min-height: 18px;
+  margin-top: 4px;
+}
+
+.pattern-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pattern-list-wrap {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.pattern-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(217, 200, 177, 0.7);
+}
+
+.pattern-item:last-child {
+  border-bottom: 0;
+}
+
+.pattern-item button {
+  margin-top: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #ead9c2;
+  color: #6c3c13;
+}
+
+.pattern-item button:hover {
+  background: #dfc7a7;
+}

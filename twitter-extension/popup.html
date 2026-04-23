@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>评论屏蔽器</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="panel">
+      <section class="card">
+        <div class="header">
+          <div>
+            <h1>评论屏蔽器</h1>
+            <p>在 X/Twitter 详情页隐藏命中的评论。</p>
+          </div>
+          <label class="switch">
+            <input id="enabled" type="checkbox">
+            <span>启用</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <label class="label" for="patterns">新增屏蔽规则</label>
+        <textarea
+          id="patterns"
+          rows="4"
+          placeholder="每行一条，例如：&#10;广告&#10;私信我&#10;/广告.{0,6}兼职/i"
+        ></textarea>
+        <button id="addPatterns" type="button">添加到规则</button>
+        <p class="hint">普通文本会忽略大小写、空格、常见标点和链接；正则请用 `/pattern/flags` 格式。</p>
+      </section>
+
+      <section class="card">
+        <div class="list-header">
+          <span class="label">当前规则</span>
+          <div class="list-actions">
+            <button id="exportPatterns" class="ghost" type="button">导出</button>
+            <button id="clearPatterns" class="ghost" type="button">清空</button>
+          </div>
+        </div>
+        <input id="patternSearch" class="search-input" type="text" placeholder="搜索规则">
+        <div class="pattern-list-wrap">
+          <ul id="patternList" class="pattern-list"></ul>
+        </div>
+        <p id="emptyState" class="hint">暂无规则，至少添加一条文本后才会生效。</p>
+      </section>
+
+      <p id="status" class="status" aria-live="polite"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

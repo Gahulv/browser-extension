@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Weibo Hot Search Filter",
+  "version": "0.1.0",
+  "description": "按自定义文本屏蔽微博热搜词条，并直接从列表移除。",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://s.weibo.com/*"
+  ],
+  "action": {
+    "default_title": "微博热搜屏蔽",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://s.weibo.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
