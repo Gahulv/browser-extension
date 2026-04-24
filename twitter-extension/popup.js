@@ -9,6 +9,8 @@ const elements = {
   addPatterns: document.getElementById("addPatterns"),
   patternSearch: document.getElementById("patternSearch"),
   patternList: document.getElementById("patternList"),
+  importPatterns: document.getElementById("importPatterns"),
+  importFile: document.getElementById("importFile"),
   exportPatterns: document.getElementById("exportPatterns"),
   clearPatterns: document.getElementById("clearPatterns"),
   emptyState: document.getElementById("emptyState"),
@@ -69,6 +71,35 @@ function setStatus(message) {
   setStatus.timer = window.setTimeout(() => {
     elements.status.textContent = "";
   }, 2200);
+}
+
+function parseImportedPatterns(text) {
+  const raw = (text || "").trim();
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .filter(Boolean);
+    }
+
+    if (parsed && Array.isArray(parsed.patterns)) {
+      return parsed.patterns
+        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .filter(Boolean);
+    }
+  } catch (error) {
+    // Fallback to line-by-line plain text parsing.
+  }
+
+  return raw
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 function render(settings) {
@@ -183,6 +214,57 @@ async function exportPatterns() {
   setStatus("规则已导出");
 }
 
+function openImportPicker() {
+  elements.importFile.value = "";
+  elements.importFile.click();
+}
+
+async function importPatternsFromFile(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) {
+    return;
+  }
+
+  try {
+    const content = await file.text();
+    const importedPatterns = parseImportedPatterns(content);
+    if (!importedPatterns.length) {
+      throw new Error("导入文件里没有可用规则");
+    }
+
+    const settings = await getSettings();
+    const seen = new Set(
+      settings.patterns.map((pattern) => {
+        const result = validatePattern(pattern);
+        return result.ok ? result.key : `raw:${pattern}`;
+      })
+    );
+    const nextPatterns = [...settings.patterns];
+    let addedCount = 0;
+
+    importedPatterns.forEach((pattern) => {
+      const validation = validatePattern(pattern);
+      if (!validation.ok) {
+        throw new Error(validation.message);
+      }
+
+      if (!seen.has(validation.key)) {
+        seen.add(validation.key);
+        nextPatterns.push(pattern);
+        addedCount += 1;
+      }
+    });
+
+    await setSettings({ patterns: nextPatterns });
+    render({ ...settings, patterns: nextPatterns });
+    setStatus(`导入完成：${addedCount} 条新增`);
+  } catch (error) {
+    setStatus(error.message || "导入失败");
+  } finally {
+    elements.importFile.value = "";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   const settings = await getSettings();
   render(settings);
@@ -198,6 +280,9 @@ elements.enabled.addEventListener("change", async (event) => {
 elements.patternSearch.addEventListener("input", () => {
   render(currentSettings);
 });
+
+elements.importPatterns.addEventListener("click", openImportPicker);
+elements.importFile.addEventListener("change", importPatternsFromFile);
 
 elements.exportPatterns.addEventListener("click", exportPatterns);
 

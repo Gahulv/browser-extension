@@ -36,10 +36,12 @@
         <div class="list-header">
           <span class="label">当前规则</span>
           <div class="list-actions">
+            <button id="importPatterns" class="ghost" type="button">导入</button>
             <button id="exportPatterns" class="ghost" type="button">导出</button>
             <button id="clearPatterns" class="ghost" type="button">清空</button>
           </div>
         </div>
+        <input id="importFile" type="file" accept=".json,.txt,application/json,text/plain" hidden>
         <input id="patternSearch" class="search-input" type="text" placeholder="搜索规则">
         <div class="pattern-list-wrap">
           <ul id="patternList" class="pattern-list"></ul>
