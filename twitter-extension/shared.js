@@ -4,7 +4,7 @@
     smartSpamFilterEnabled: true,
     patterns: ["广告"],
     remotePatterns: [],
-    cloudRulesUrl: "",
+    cloudRulesUrl: "https://raw.githubusercontent.com/Gahulv/browser-extension/refs/heads/main/twitter-extension/twitter-filter-rules.json",
     cloudRulesLastSynced: ""
   };
 

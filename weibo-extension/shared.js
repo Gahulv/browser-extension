@@ -3,7 +3,7 @@
     enabled: true,
     patterns: ["广告"],
     remotePatterns: [],
-    cloudRulesUrl: "",
+    cloudRulesUrl: "https://raw.githubusercontent.com/Gahulv/browser-extension/refs/heads/main/weibo-extension/weibo-filter-rules-1777038463509.json",
     cloudRulesLastSynced: ""
   };
 
