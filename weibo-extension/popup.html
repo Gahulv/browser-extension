@@ -33,6 +33,14 @@
       </section>
 
       <section class="card">
+        <span class="label">云端规则</span>
+        <label class="label compact" for="cloudRulesUrl">GitHub Raw URL</label>
+        <input id="cloudRulesUrl" class="text-input" type="url" placeholder="https://raw.githubusercontent.com/.../rules.json">
+        <button id="syncCloudRules" type="button">同步云端规则</button>
+        <p id="cloudRulesMeta" class="hint">本地规则和云端规则会同时匹配。</p>
+      </section>
+
+      <section class="card">
         <div class="list-header">
           <span class="label">当前规则</span>
           <div class="list-actions">
@@ -51,6 +59,7 @@
 
       <p id="status" class="status" aria-live="polite"></p>
     </main>
+    <script src="shared.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

@@ -1,7 +1,5 @@
-const DEFAULT_SETTINGS = {
-  enabled: true,
-  patterns: ["广告"]
-};
+const shared = window.WeiboFilterShared;
+const DEFAULT_SETTINGS = shared.DEFAULT_SETTINGS;
 
 const HIDDEN_FLAG = "weiboHotFilterHidden";
 const PREV_DISPLAY_FLAG = "weiboHotFilterPrevDisplay";
@@ -20,55 +18,12 @@ function getSettings() {
   });
 }
 
-function normalizeText(value) {
-  return (value || "")
-    .toLocaleLowerCase()
-    .normalize("NFKC")
-    .replace(/https?:\/\/\S+/g, " ")
-    .replace(/[^\p{L}\p{N}]+/gu, "");
+function getCombinedPatterns() {
+  return shared.mergeUniquePatterns(settingsCache.patterns || [], settingsCache.remotePatterns || []);
 }
 
-function buildMatchers(patterns) {
-  return patterns
-    .map((pattern) => {
-      const trimmed = (pattern || "").trim();
-      if (!trimmed) {
-        return null;
-      }
-
-      const normalized = normalizeText(trimmed);
-      if (!normalized) {
-        return null;
-      }
-
-      return {
-        rawLower: trimmed.toLocaleLowerCase().normalize("NFKC"),
-        normalized
-      };
-    })
-    .filter(Boolean);
-}
-
-function shouldHideText(rawText) {
-  if (!settingsCache.enabled || !matcherCache.length) {
-    return false;
-  }
-
-  const raw = rawText || "";
-  if (!raw.trim()) {
-    return false;
-  }
-
-  const rawComparable = raw.toLocaleLowerCase().normalize("NFKC");
-  const normalizedText = normalizeText(raw).slice(0, 320);
-
-  return matcherCache.some((matcher) => {
-    if (matcher.rawLower && rawComparable.includes(matcher.rawLower)) {
-      return true;
-    }
-
-    return Boolean(normalizedText) && normalizedText.includes(matcher.normalized);
-  });
+function refreshMatchers() {
+  matcherCache = shared.buildMatchers(getCombinedPatterns());
 }
 
 function isHotPage() {
@@ -81,7 +36,8 @@ function isHotPage() {
 function getSettingsSignature() {
   return JSON.stringify({
     enabled: settingsCache.enabled,
-    patterns: settingsCache.patterns
+    patterns: settingsCache.patterns,
+    remotePatterns: settingsCache.remotePatterns
   });
 }
 
@@ -139,7 +95,7 @@ function setHidden(row, hidden) {
 
 function shouldHideRow(row) {
   const text = getRowText(row).trim();
-  const normalizedText = normalizeText(text).slice(0, 320);
+  const normalizedText = shared.normalizeText(text).slice(0, 320);
   const settingsSignature = getSettingsSignature();
 
   if (
@@ -149,7 +105,7 @@ function shouldHideRow(row) {
     return row.dataset[MATCH_FLAG] === "1";
   }
 
-  const matched = text ? shouldHideText(text) : false;
+  const matched = text ? shared.shouldHideText(text, matcherCache, settingsCache.enabled) : false;
   row.dataset[TEXT_CACHE_FLAG] = normalizedText;
   row.dataset[SETTINGS_CACHE_FLAG] = settingsSignature;
   row.dataset[MATCH_FLAG] = matched ? "1" : "0";
@@ -188,7 +144,7 @@ function monitorRouteChange() {
 
 async function init() {
   settingsCache = await getSettings();
-  matcherCache = buildMatchers(settingsCache.patterns || []);
+  refreshMatchers();
   scanHotList();
 
   const observer = new MutationObserver(() => {
@@ -212,9 +168,10 @@ async function init() {
         Object.entries(changes).map(([key, change]) => [key, change.newValue])
       )
     };
-    matcherCache = buildMatchers(settingsCache.patterns || []);
+    refreshMatchers();
     scheduleScan();
   });
+
 }
 
 init();

@@ -70,7 +70,8 @@ textarea {
   font: inherit;
 }
 
-.search-input {
+.search-input,
+.text-input {
   box-sizing: border-box;
   width: 100%;
   margin-bottom: 8px;
@@ -80,6 +81,12 @@ textarea {
   background: #fffdfa;
   color: inherit;
   font: inherit;
+}
+
+.compact {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
 }
 
 button {
@@ -157,4 +164,14 @@ button.ghost {
 
 .pattern-item button:hover {
   background: #dfc7a7;
+}
+
+.pattern-item.is-remote span::after {
+  content: "云端";
+  margin-left: 8px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: #edf2ff;
+  color: #3451a4;
+  font-size: 11px;
 }

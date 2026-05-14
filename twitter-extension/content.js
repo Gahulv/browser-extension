@@ -1,7 +1,5 @@
-const DEFAULT_SETTINGS = {
-  enabled: true,
-  patterns: ["广告"]
-};
+const shared = window.TwitterFilterShared;
+const DEFAULT_SETTINGS = shared.DEFAULT_SETTINGS;
 
 const HIDDEN_FLAG = "commentFilterHidden";
 const PREV_DISPLAY_FLAG = "commentFilterPrevDisplay";
@@ -20,84 +18,6 @@ function getSettings() {
   });
 }
 
-function normalizeText(value) {
-  return (value || "")
-    .toLocaleLowerCase()
-    .normalize("NFKC")
-    .replace(/https?:\/\/\S+/g, " ")
-    .replace(/@\w+/g, " ")
-    .replace(/[^\p{L}\p{N}]+/gu, "");
-}
-
-function parseRegexPattern(value) {
-  const match = value.match(/^\/(.+)\/([a-z]*)$/i);
-  if (!match) {
-    return null;
-  }
-
-  return {
-    source: match[1],
-    flags: match[2]
-  };
-}
-
-function buildMatchers(patterns) {
-  return patterns
-    .map((pattern) => {
-      const regexPattern = parseRegexPattern(pattern);
-      if (regexPattern) {
-        try {
-          return {
-            type: "regex",
-            raw: pattern,
-            regex: new RegExp(regexPattern.source, regexPattern.flags)
-          };
-        } catch (error) {
-          return null;
-        }
-      }
-
-      const normalizedPattern = normalizeText(pattern);
-      if (!normalizedPattern) {
-        return null;
-      }
-
-      return {
-        type: "text",
-        raw: pattern,
-        rawLower: pattern.toLocaleLowerCase().normalize("NFKC"),
-        normalized: normalizedPattern
-      };
-    })
-    .filter(Boolean);
-}
-
-function shouldHideText(rawText) {
-  if (!settingsCache.enabled || !matcherCache.length) {
-    return false;
-  }
-
-  const raw = rawText || "";
-  const rawComparable = raw.toLocaleLowerCase().normalize("NFKC");
-  const normalizedText = normalizeText(raw).slice(0, 320);
-  if (!raw.trim()) {
-    return false;
-  }
-
-  return matcherCache.some((matcher) => {
-    if (matcher.type === "regex") {
-      matcher.regex.lastIndex = 0;
-      return matcher.regex.test(raw);
-    }
-
-    if (matcher.rawLower && rawComparable.includes(matcher.rawLower)) {
-      return true;
-    }
-
-    return Boolean(normalizedText) && normalizedText.includes(matcher.normalized);
-  });
-}
-
 function isConversationPage() {
   return /\/status\/\d+/.test(location.pathname);
 }
@@ -105,6 +25,7 @@ function isConversationPage() {
 function getSettingsSignature() {
   return JSON.stringify({
     enabled: settingsCache.enabled,
+    smartSpamFilterEnabled: settingsCache.smartSpamFilterEnabled,
     patterns: settingsCache.patterns
   });
 }
@@ -117,6 +38,38 @@ function getTweetText(article) {
     .trim();
 
   return combined || article.textContent || "";
+}
+
+function getAuthorInfo(article) {
+  const userNameNode = article.querySelector('[data-testid="User-Name"]');
+  const userNameText = (userNameNode?.textContent || "").trim();
+  const handleMatch = userNameText.match(/@([A-Za-z0-9_]+)/);
+  const handle = handleMatch ? handleMatch[1] : getHandleFromProfileLink(article);
+  const authorName = userNameText
+    ? userNameText.replace(/@([A-Za-z0-9_]+).*/, "").trim()
+    : "";
+
+  return {
+    authorName,
+    handle
+  };
+}
+
+function getHandleFromProfileLink(article) {
+  const links = Array.from(article.querySelectorAll('a[href^="/"]'));
+  const profileLink = links.find((link) => {
+    const href = link.getAttribute("href") || "";
+    return /^\/[A-Za-z0-9_]+$/.test(href);
+  });
+
+  return profileLink ? profileLink.getAttribute("href").slice(1) : "";
+}
+
+function getTweetInfo(article) {
+  return {
+    text: getTweetText(article),
+    ...getAuthorInfo(article)
+  };
 }
 
 function getTweetArticles() {
@@ -149,8 +102,10 @@ function setHidden(article, hidden) {
 }
 
 function shouldHideArticle(article) {
-  const text = getTweetText(article);
-  const normalizedText = normalizeText(text).slice(0, 320);
+  const tweetInfo = getTweetInfo(article);
+  const normalizedText = shared
+    .normalizeText([tweetInfo.text, tweetInfo.authorName, tweetInfo.handle].join(" "))
+    .slice(0, 360);
   const settingsSignature = getSettingsSignature();
 
   if (
@@ -160,7 +115,11 @@ function shouldHideArticle(article) {
     return article.dataset[MATCH_FLAG] === "1";
   }
 
-  const matched = text ? shouldHideText(text) : false;
+  const matched = shared.shouldHideTweet({
+    ...tweetInfo,
+    matchers: matcherCache,
+    settings: settingsCache
+  });
   article.dataset[TEXT_CACHE_FLAG] = normalizedText;
   article.dataset[SETTINGS_CACHE_FLAG] = settingsSignature;
   article.dataset[MATCH_FLAG] = matched ? "1" : "0";
@@ -203,7 +162,7 @@ function monitorRouteChange() {
 
 async function init() {
   settingsCache = await getSettings();
-  matcherCache = buildMatchers(settingsCache.patterns || []);
+  matcherCache = shared.buildMatchers(settingsCache.patterns || []);
   scanTweets();
 
   const observer = new MutationObserver(() => {
@@ -227,7 +186,7 @@ async function init() {
         Object.entries(changes).map(([key, change]) => [key, change.newValue])
       )
     };
-    matcherCache = buildMatchers(settingsCache.patterns || []);
+    matcherCache = shared.buildMatchers(settingsCache.patterns || []);
     scheduleScan();
   });
 }

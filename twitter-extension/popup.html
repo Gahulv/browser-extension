@@ -14,10 +14,16 @@
             <h1>评论屏蔽器</h1>
             <p>在 X/Twitter 详情页隐藏命中的评论。</p>
           </div>
-          <label class="switch">
-            <input id="enabled" type="checkbox">
-            <span>启用</span>
-          </label>
+          <div class="switch-group">
+            <label class="switch">
+              <input id="enabled" type="checkbox">
+              <span>启用</span>
+            </label>
+            <label class="switch">
+              <input id="smartSpamFilterEnabled" type="checkbox">
+              <span>智能识别营销号短评</span>
+            </label>
+          </div>
         </div>
       </section>
 
@@ -51,6 +57,7 @@
 
       <p id="status" class="status" aria-live="polite"></p>
     </main>
+    <script src="shared.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

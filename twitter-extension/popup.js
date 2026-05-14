@@ -1,10 +1,9 @@
-const DEFAULT_SETTINGS = {
-  enabled: true,
-  patterns: ["广告"]
-};
+const shared = window.TwitterFilterShared;
+const DEFAULT_SETTINGS = shared.DEFAULT_SETTINGS;
 
 const elements = {
   enabled: document.getElementById("enabled"),
+  smartSpamFilterEnabled: document.getElementById("smartSpamFilterEnabled"),
   patterns: document.getElementById("patterns"),
   addPatterns: document.getElementById("addPatterns"),
   patternSearch: document.getElementById("patternSearch"),
@@ -32,23 +31,11 @@ function setSettings(nextSettings) {
 }
 
 function normalizeForCompare(value) {
-  return value
-    .trim()
-    .toLocaleLowerCase()
-    .normalize("NFKC")
-    .replace(/\s+/g, " ");
+  return shared.normalizeForCompare(value);
 }
 
 function parseRegexPattern(value) {
-  const match = value.match(/^\/(.+)\/([a-z]*)$/i);
-  if (!match) {
-    return null;
-  }
-
-  return {
-    source: match[1],
-    flags: match[2]
-  };
+  return shared.parseRegexPattern(value);
 }
 
 function validatePattern(value) {
@@ -105,6 +92,7 @@ function parseImportedPatterns(text) {
 function render(settings) {
   currentSettings = settings;
   elements.enabled.checked = settings.enabled;
+  elements.smartSpamFilterEnabled.checked = settings.smartSpamFilterEnabled;
   const query = normalizeForCompare(elements.patternSearch.value || "");
   const visiblePatterns = query
     ? settings.patterns.filter((pattern) => normalizeForCompare(pattern).includes(query))
@@ -275,6 +263,15 @@ elements.addPatterns.addEventListener("click", addPatterns);
 elements.enabled.addEventListener("change", async (event) => {
   await setSettings({ enabled: event.target.checked });
   setStatus(event.target.checked ? "已启用" : "已停用");
+});
+
+elements.smartSpamFilterEnabled.addEventListener("change", async (event) => {
+  await setSettings({ smartSpamFilterEnabled: event.target.checked });
+  currentSettings = {
+    ...currentSettings,
+    smartSpamFilterEnabled: event.target.checked
+  };
+  setStatus(event.target.checked ? "已启用智能识别" : "已关闭智能识别");
 });
 
 elements.patternSearch.addEventListener("input", () => {
