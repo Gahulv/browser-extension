@@ -2,7 +2,10 @@
   const DEFAULT_SETTINGS = {
     enabled: true,
     smartSpamFilterEnabled: true,
-    patterns: ["广告"]
+    patterns: ["广告"],
+    remotePatterns: [],
+    cloudRulesUrl: "",
+    cloudRulesLastSynced: ""
   };
 
   const STRONG_AUTHOR_PATTERNS = [
@@ -173,6 +176,50 @@
     return isShortJunkReply(text) || hasRandomMarketingHandle(handle);
   }
 
+  function cleanPatternList(patterns) {
+    return patterns.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean);
+  }
+
+  function parseRulesText(text) {
+    const raw = (text || "").trim();
+    if (!raw) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return cleanPatternList(parsed);
+      }
+
+      if (parsed && Array.isArray(parsed.patterns)) {
+        return cleanPatternList(parsed.patterns);
+      }
+    } catch (error) {
+      // Fall back to line-by-line.
+    }
+
+    return cleanPatternList(raw.split(/\r?\n/g));
+  }
+
+  function mergeUniquePatterns(basePatterns, incomingPatterns) {
+    const seen = new Set();
+    const merged = [];
+
+    [...cleanPatternList(basePatterns || []), ...cleanPatternList(incomingPatterns || [])].forEach(
+      (pattern) => {
+        if (!pattern || seen.has(pattern)) {
+          return;
+        }
+
+        seen.add(pattern);
+        merged.push(pattern);
+      }
+    );
+
+    return merged;
+  }
+
   const api = {
     DEFAULT_SETTINGS,
     normalizeText,
@@ -183,7 +230,9 @@
     hasStrongAuthorSpamSignal,
     hasRandomMarketingHandle,
     isShortJunkReply,
-    shouldHideTweet
+    shouldHideTweet,
+    parseRulesText,
+    mergeUniquePatterns
   };
 
   root.TwitterFilterShared = api;

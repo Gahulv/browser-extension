@@ -8,7 +8,8 @@
   ],
   "host_permissions": [
     "https://x.com/*",
-    "https://twitter.com/*"
+    "https://twitter.com/*",
+    "https://raw.githubusercontent.com/*"
   ],
   "action": {
     "default_title": "评论屏蔽器",

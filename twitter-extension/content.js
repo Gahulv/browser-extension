@@ -22,11 +22,15 @@ function isConversationPage() {
   return /\/status\/\d+/.test(location.pathname);
 }
 
+function getCombinedPatterns() {
+  return shared.mergeUniquePatterns(settingsCache.patterns || [], settingsCache.remotePatterns || []);
+}
+
 function getSettingsSignature() {
   return JSON.stringify({
     enabled: settingsCache.enabled,
     smartSpamFilterEnabled: settingsCache.smartSpamFilterEnabled,
-    patterns: settingsCache.patterns
+    patterns: getCombinedPatterns()
   });
 }
 
@@ -162,7 +166,7 @@ function monitorRouteChange() {
 
 async function init() {
   settingsCache = await getSettings();
-  matcherCache = shared.buildMatchers(settingsCache.patterns || []);
+  matcherCache = shared.buildMatchers(getCombinedPatterns());
   scanTweets();
 
   const observer = new MutationObserver(() => {
@@ -186,7 +190,7 @@ async function init() {
         Object.entries(changes).map(([key, change]) => [key, change.newValue])
       )
     };
-    matcherCache = shared.buildMatchers(settingsCache.patterns || []);
+    matcherCache = shared.buildMatchers(getCombinedPatterns());
     scheduleScan();
   });
 }

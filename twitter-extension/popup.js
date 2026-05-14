@@ -13,6 +13,9 @@ const elements = {
   exportPatterns: document.getElementById("exportPatterns"),
   clearPatterns: document.getElementById("clearPatterns"),
   emptyState: document.getElementById("emptyState"),
+  cloudRulesUrl: document.getElementById("cloudRulesUrl"),
+  syncCloudRules: document.getElementById("syncCloudRules"),
+  cloudRulesMeta: document.getElementById("cloudRulesMeta"),
   status: document.getElementById("status")
 };
 
@@ -89,30 +92,64 @@ function parseImportedPatterns(text) {
     .filter(Boolean);
 }
 
+function getRenderableRules(settings) {
+  const rules = [];
+  const seen = new Set();
+
+  (settings.patterns || []).forEach((pattern) => {
+    if (!pattern || seen.has(pattern)) {
+      return;
+    }
+
+    seen.add(pattern);
+    rules.push({ pattern, source: "local" });
+  });
+
+  (settings.remotePatterns || []).forEach((pattern) => {
+    if (!pattern || seen.has(pattern)) {
+      return;
+    }
+
+    seen.add(pattern);
+    rules.push({ pattern, source: "remote" });
+  });
+
+  return rules;
+}
+
 function render(settings) {
   currentSettings = settings;
   elements.enabled.checked = settings.enabled;
   elements.smartSpamFilterEnabled.checked = settings.smartSpamFilterEnabled;
+  elements.cloudRulesUrl.value = settings.cloudRulesUrl || "";
+
   const query = normalizeForCompare(elements.patternSearch.value || "");
-  const visiblePatterns = query
-    ? settings.patterns.filter((pattern) => normalizeForCompare(pattern).includes(query))
-    : settings.patterns;
+  const rules = getRenderableRules(settings);
+  const visibleRules = query
+    ? rules.filter(({ pattern }) => normalizeForCompare(pattern).includes(query))
+    : rules;
+
   elements.patternList.innerHTML = "";
-  visiblePatterns.forEach((pattern) => {
+
+  visibleRules.forEach(({ pattern, source }) => {
     const item = document.createElement("li");
-    item.className = "pattern-item";
+    item.className = source === "remote" ? "pattern-item is-remote" : "pattern-item";
 
     const text = document.createElement("span");
     text.textContent = pattern;
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.textContent = "删除";
+    removeButton.textContent = source === "remote" ? "云端" : "删除";
+    removeButton.disabled = source === "remote";
     removeButton.addEventListener("click", async () => {
+      if (source !== "local") {
+        return;
+      }
+
       const nextPatterns = settings.patterns.filter((entry) => entry !== pattern);
       await setSettings({ patterns: nextPatterns });
-      const nextSettings = { ...settings, patterns: nextPatterns };
-      render(nextSettings);
+      render({ ...settings, patterns: nextPatterns });
       setStatus("规则已删除");
     });
 
@@ -120,19 +157,28 @@ function render(settings) {
     elements.patternList.appendChild(item);
   });
 
-  if (!settings.patterns.length) {
+  if (!rules.length) {
     elements.emptyState.textContent = "暂无规则，至少添加一条文本后才会生效。";
     elements.emptyState.style.display = "block";
     return;
   }
 
-  if (!visiblePatterns.length) {
+  if (!visibleRules.length) {
     elements.emptyState.textContent = "未找到匹配规则。";
     elements.emptyState.style.display = "block";
     return;
   }
 
   elements.emptyState.style.display = "none";
+  renderCloudMeta(settings);
+}
+
+function renderCloudMeta(settings) {
+  const count = (settings.remotePatterns || []).length;
+  const synced = settings.cloudRulesLastSynced
+    ? `，上次同步：${new Date(settings.cloudRulesLastSynced).toLocaleString()}`
+    : "";
+  elements.cloudRulesMeta.textContent = `云端规则 ${count} 条${synced}。本地规则和云端规则会同时匹配。`;
 }
 
 async function addPatterns() {
@@ -253,6 +299,38 @@ async function importPatternsFromFile(event) {
   }
 }
 
+async function syncCloudRules() {
+  const cloudRulesUrl = elements.cloudRulesUrl.value.trim();
+  if (!cloudRulesUrl) {
+    setStatus("请输入 GitHub raw URL");
+    return;
+  }
+
+  try {
+    setStatus("正在同步云端规则...");
+    const response = await fetch(cloudRulesUrl, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`云端规则请求失败：${response.status}`);
+    }
+
+    const remotePatterns = shared.parseRulesText(await response.text());
+    if (!remotePatterns.length) {
+      throw new Error("云端规则为空或格式不正确");
+    }
+
+    const nextSettings = {
+      cloudRulesUrl,
+      remotePatterns,
+      cloudRulesLastSynced: new Date().toISOString()
+    };
+    await setSettings(nextSettings);
+    render({ ...currentSettings, ...nextSettings });
+    setStatus(`云端规则已同步：${remotePatterns.length} 条`);
+  } catch (error) {
+    setStatus(error.message || "云端规则同步失败");
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   const settings = await getSettings();
   render(settings);
@@ -282,6 +360,7 @@ elements.importPatterns.addEventListener("click", openImportPicker);
 elements.importFile.addEventListener("change", importPatternsFromFile);
 
 elements.exportPatterns.addEventListener("click", exportPatterns);
+elements.syncCloudRules.addEventListener("click", syncCloudRules);
 
 elements.clearPatterns.addEventListener("click", async () => {
   await setSettings({ patterns: [] });
