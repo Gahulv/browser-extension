@@ -184,7 +184,7 @@ function downloadRules(patterns) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `weibo-filter-rules-${Date.now()}.json`;
+  link.download = `weibo-filter-rules.json`;
   link.click();
   URL.revokeObjectURL(url);
 }

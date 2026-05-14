@@ -242,7 +242,7 @@ async function exportPatterns() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `twitter-filter-rules-${Date.now()}.json`;
+  link.download = `twitter-filter-rules.json`;
   link.click();
   URL.revokeObjectURL(url);
   setStatus("规则已导出");
